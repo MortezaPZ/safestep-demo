@@ -1,0 +1,315 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   SafeStep / هم‌قدم — توکن‌های دیزاین‌سیستم
+
+   قواعد رنگ در این محصول:
+     • آبی آرام  → حالت عادی و کنش‌های اصلی
+     • سبز       → «داخل محدوده‌ی امن» (وضعیت مطلوب)
+     • کهربایی   → هشدار غیربحرانی: خروج از محدوده، توقف طولانی، قطع GPS
+     • قرمز      → فقط و فقط SOS
+
+   قرمز عمداً کمیاب است. اگر قرمز را برای هر هشداری خرج کنیم، وقتی
+   واقعاً یک درخواست کمک اضطراری برسد، دیگر چیزی برای جلب توجه نمانده است.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ───────────────────────────── فونت ───────────────────────────── */
+
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('../vendor/fonts/Vazirmatn-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('../vendor/fonts/Vazirmatn-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('../vendor/fonts/Vazirmatn-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('../vendor/fonts/Vazirmatn-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  /* ───────────── پالت پایه ───────────── */
+  --blue-50:  #EFF5FF;
+  --blue-100: #DBE7FE;
+  --blue-300: #93B4FA;
+  --blue-500: #2F6FED;
+  --blue-600: #1E56C8;
+  --blue-700: #1743A0;
+
+  --green-50:  #E8F7F1;
+  --green-100: #C9EDDF;
+  --green-500: #12805C;
+  --green-600: #0D6647;
+
+  --amber-50:  #FDF3E5;
+  --amber-100: #FAE3C2;
+  --amber-500: #E8880C;
+  --amber-600: #BE6E08;
+
+  --red-50:  #FDECEC;
+  --red-100: #FBD5D5;
+  --red-500: #DC2626;
+  --red-600: #B91C1C;
+  --red-700: #991B1B;
+
+  --purple-500: #7C4DFF;
+
+  --gray-0:   #FFFFFF;
+  --gray-25:  #FBFCFD;
+  --gray-50:  #F4F6F8;
+  --gray-100: #E8ECF0;
+  --gray-200: #D6DDE4;
+  --gray-300: #B4BFC9;
+  --gray-400: #8A98A5;
+  --gray-500: #647585;
+  --gray-600: #4A5967;
+  --gray-700: #35424E;
+  --gray-800: #222C36;
+  --gray-900: #141A21;
+  --gray-950: #0C1116;
+
+  /* ───────────── فاصله‌گذاری (مقیاس ۴ پیکسلی) ───────────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* ───────────── تایپوگرافی ───────────── */
+  --font-sans: 'Vazirmatn', 'Segoe UI', Tahoma, system-ui, sans-serif;
+
+  /* از rem استفاده می‌شود تا بزرگ‌نمایی متن مرورگر واقعاً کار کند —
+     برای کاربری که ممکن است مشکل بینایی هم داشته باشد، این حیاتی است */
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.375rem;
+  --text-2xl:  1.75rem;
+  --text-3xl:  2.25rem;
+
+  --leading-tight: 1.35;
+  --leading-normal: 1.7;
+
+  /* ───────────── گردی گوشه‌ها ───────────── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-full: 999px;
+
+  /* ───────────── حرکت ───────────── */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 160ms;
+  --duration-base: 240ms;
+  --duration-slow: 320ms;
+
+  /* ───────────── اندازه‌ی هدف لمسی ─────────────
+     حداقل ۴۸ پیکسل طبق WCAG 2.2؛ برای کاربری که ممکن است
+     لرزش دست داشته باشد، هدف‌های کوچک عملاً غیرقابل استفاده‌اند */
+  --touch-min: 48px;
+  --sos-size: 128px;
+
+  --header-height: 64px;
+  --content-max: 1440px;
+}
+
+/* ═══════════════════ تم روشن (پیش‌فرض) ═══════════════════ */
+
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg-canvas:   var(--gray-50);
+  --bg-surface:  var(--gray-0);
+  --bg-raised:   var(--gray-0);
+  --bg-sunken:   var(--gray-25);
+  --bg-overlay:  rgba(20, 26, 33, 0.55);
+  --bg-hover:    var(--gray-50);
+  --bg-active:   var(--gray-100);
+
+  --border-subtle: var(--gray-100);
+  --border-default: var(--gray-200);
+  --border-strong: var(--gray-300);
+
+  --text-primary:   var(--gray-900);
+  --text-secondary: var(--gray-600);
+  --text-muted:     var(--gray-500);
+  --text-inverse:   var(--gray-0);
+
+  --accent:        var(--blue-500);
+  --accent-hover:  var(--blue-600);
+  --accent-soft:   var(--blue-50);
+  --accent-border: var(--blue-100);
+  --accent-text:   var(--blue-700);
+
+  --safe:        var(--green-500);
+  --safe-soft:   var(--green-50);
+  --safe-border: var(--green-100);
+  --safe-text:   var(--green-600);
+
+  --warn:        var(--amber-500);
+  --warn-soft:   var(--amber-50);
+  --warn-border: var(--amber-100);
+  --warn-text:   var(--amber-600);
+
+  --danger:        var(--red-500);
+  --danger-hover:  var(--red-600);
+  --danger-soft:   var(--red-50);
+  --danger-border: var(--red-100);
+  --danger-text:   var(--red-700);
+
+  --unknown:      var(--gray-400);
+  --unknown-soft: var(--gray-50);
+
+  --shadow-sm: 0 1px 2px rgba(20, 26, 33, 0.06), 0 1px 3px rgba(20, 26, 33, 0.04);
+  --shadow-md: 0 2px 6px rgba(20, 26, 33, 0.07), 0 6px 16px rgba(20, 26, 33, 0.06);
+  --shadow-lg: 0 8px 24px rgba(20, 26, 33, 0.1), 0 16px 40px rgba(20, 26, 33, 0.08);
+  --shadow-sos: 0 6px 20px rgba(220, 38, 38, 0.34);
+
+  --skeleton-base: var(--gray-100);
+  --skeleton-shine: var(--gray-50);
+}
+
+/* ═══════════════════ تم تیره ═══════════════════ */
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-canvas:   var(--gray-950);
+  --bg-surface:  var(--gray-900);
+  --bg-raised:   var(--gray-800);
+  --bg-sunken:   #0A0E13;
+  --bg-overlay:  rgba(0, 0, 0, 0.7);
+  --bg-hover:    rgba(255, 255, 255, 0.04);
+  --bg-active:   rgba(255, 255, 255, 0.08);
+
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.2);
+
+  --text-primary:   #EEF2F6;
+  --text-secondary: #A8B4C0;
+  --text-muted:     #7A8794;
+  --text-inverse:   var(--gray-900);
+
+  /* رنگ‌های تم تیره روشن‌تر شده‌اند تا کنتراست AA روی پس‌زمینه‌ی تیره حفظ شود */
+  --accent:        #6C9BFF;
+  --accent-hover:  #89AFFF;
+  --accent-soft:   rgba(108, 155, 255, 0.13);
+  --accent-border: rgba(108, 155, 255, 0.28);
+  --accent-text:   #A9C4FF;
+
+  --safe:        #3BC49A;
+  --safe-soft:   rgba(59, 196, 154, 0.13);
+  --safe-border: rgba(59, 196, 154, 0.28);
+  --safe-text:   #6DD9B8;
+
+  --warn:        #F0A73E;
+  --warn-soft:   rgba(240, 167, 62, 0.13);
+  --warn-border: rgba(240, 167, 62, 0.28);
+  --warn-text:   #F5C071;
+
+  --danger:        #F0555A;
+  --danger-hover:  #F5787C;
+  --danger-soft:   rgba(240, 85, 90, 0.14);
+  --danger-border: rgba(240, 85, 90, 0.3);
+  --danger-text:   #FF9195;
+
+  --unknown:      var(--gray-500);
+  --unknown-soft: rgba(255, 255, 255, 0.05);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 3px 10px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --shadow-sos: 0 6px 24px rgba(240, 85, 90, 0.4);
+
+  --skeleton-base: rgba(255, 255, 255, 0.06);
+  --skeleton-shine: rgba(255, 255, 255, 0.11);
+}
+
+/* پیروی از تنظیم سیستم وقتی کاربر انتخاب صریحی نکرده است */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --bg-canvas:   var(--gray-950);
+    --bg-surface:  var(--gray-900);
+    --bg-raised:   var(--gray-800);
+    --bg-sunken:   #0A0E13;
+    --bg-overlay:  rgba(0, 0, 0, 0.7);
+    --bg-hover:    rgba(255, 255, 255, 0.04);
+    --bg-active:   rgba(255, 255, 255, 0.08);
+
+    --border-subtle: rgba(255, 255, 255, 0.07);
+    --border-default: rgba(255, 255, 255, 0.12);
+    --border-strong: rgba(255, 255, 255, 0.2);
+
+    --text-primary:   #EEF2F6;
+    --text-secondary: #A8B4C0;
+    --text-muted:     #7A8794;
+    --text-inverse:   var(--gray-900);
+
+    --accent:        #6C9BFF;
+    --accent-hover:  #89AFFF;
+    --accent-soft:   rgba(108, 155, 255, 0.13);
+    --accent-border: rgba(108, 155, 255, 0.28);
+    --accent-text:   #A9C4FF;
+
+    --safe:        #3BC49A;
+    --safe-soft:   rgba(59, 196, 154, 0.13);
+    --safe-border: rgba(59, 196, 154, 0.28);
+    --safe-text:   #6DD9B8;
+
+    --warn:        #F0A73E;
+    --warn-soft:   rgba(240, 167, 62, 0.13);
+    --warn-border: rgba(240, 167, 62, 0.28);
+    --warn-text:   #F5C071;
+
+    --danger:        #F0555A;
+    --danger-hover:  #F5787C;
+    --danger-soft:   rgba(240, 85, 90, 0.14);
+    --danger-border: rgba(240, 85, 90, 0.3);
+    --danger-text:   #FF9195;
+
+    --unknown:      var(--gray-500);
+    --unknown-soft: rgba(255, 255, 255, 0.05);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 3px 10px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+    --shadow-sos: 0 6px 24px rgba(240, 85, 90, 0.4);
+
+    --skeleton-base: rgba(255, 255, 255, 0.06);
+    --skeleton-shine: rgba(255, 255, 255, 0.11);
+  }
+}
+
+/* احترام به تنظیم «کاهش حرکت» سیستم عامل.
+   بخشی از مخاطبان این محصول ممکن است به حرکت حساس باشند. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

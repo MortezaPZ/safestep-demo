@@ -1,0 +1,29 @@
+# وابستگی‌ها
+node_modules/
+
+# رازها — هرگز کامیت نشوند (فقط .env.example در مخزن می‌ماند)
+.env
+.env.local
+.env.*.local
+
+# دیتابیس محلی PGlite
+.pglite/
+backend/.pglite/
+
+# خروجی تست و بیلد
+coverage/
+dist/
+build/
+
+# Flutter
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins*
+mobile/ios/Pods/
+
+# سیستم‌عامل و ویرایشگر
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

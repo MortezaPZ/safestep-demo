@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="هم‌قدم — سامانه‌ی ایمنی و ردیابی برای افراد دارای محدودیت حرکتی و خانواده‌هایشان">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#2F6FED">
+
+  <title>هم‌قدم — سامانه‌ی ایمنی و ردیابی</title>
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚶</text></svg>">
+
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <!--
+    ظرف اصلی اپ. محتوا کاملاً از سمت جاوااسکریپت ساخته می‌شود.
+    تا زمان بارگذاری ماژول‌ها، اسکلتون زیر نمایش داده می‌شود تا صفحه
+    هرگز سفید و خالی دیده نشود.
+  -->
+  <div id="root">
+    <div style="display:grid;place-items:center;min-height:100vh;padding:2rem;">
+      <div style="width:min(440px,100%);">
+        <div class="skeleton skeleton--title"></div>
+        <div class="skeleton skeleton--text"></div>
+        <div class="skeleton skeleton--text" style="width:70%"></div>
+        <div class="skeleton skeleton--card" style="margin-top:1.5rem"></div>
+      </div>
+    </div>
+  </div>
+
+  <!--
+    این دو کتابخانه به‌صورت محلی سرو می‌شوند (پوشه‌ی vendor) تا دمو
+    بدون دسترسی به CDN هم بالا بیاید. تنها چیزی که به اینترنت نیاز دارد،
+    کاشی‌های نقشه‌ی OpenStreetMap است.
+  -->
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="vendor/socket.io.min.js"></script>
+
+  <script type="module" src="js/app.js"></script>
+
+  <noscript>
+    <div style="padding:2rem;text-align:center;font-family:Tahoma,sans-serif;">
+      <h1>جاوااسکریپت غیرفعال است</h1>
+      <p>برای استفاده از داشبورد هم‌قدم، لطفاً جاوااسکریپت مرورگر خود را فعال کنید.</p>
+    </div>
+  </noscript>
+</body>
+</html>
