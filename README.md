@@ -116,7 +116,7 @@ PostgreSQL واقعی بالا می‌آید، مهاجرت‌ها و داده�
 flowchart TB
     subgraph clients["کلاینت‌ها"]
         web["داشبورد وب<br/>ES Modules + Leaflet"]
-        mobile["اپ Flutter<br/>(کامپایل‌نشده)"]
+        mobile["اپ Flutter<br/>فاز بعدی — پیاده‌سازی نشده"]
     end
 
     subgraph api["Node.js + Express"]
@@ -137,7 +137,7 @@ flowchart TB
     db[("PostgreSQL<br/>شبکه‌ای یا PGlite")]
 
     web -->|"REST + WebSocket"| routes
-    mobile -->|"REST + WebSocket"| routes
+    mobile -.->|"REST + WebSocket"| routes
     svc --> geo
     svc --> stop
     svc --> notif
