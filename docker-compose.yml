@@ -1,0 +1,109 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  SafeStep / هم‌قدم — راه‌اندازی کامل با یک دستور
+#
+#      docker compose up
+#
+#  پس از بالا آمدن:
+#      داشبورد وب : http://localhost:4000
+#      سلامت سرویس: http://localhost:4000/health
+#
+#  مهاجرت‌ها و داده‌ی نمونه خودکار اجرا می‌شوند (سرویس migrate).
+#
+#  ── اگر Docker ندارید ────────────────────────────────────────────────────
+#  همین سیستم بدون Docker هم کامل اجرا می‌شود:
+#      cd backend && npm install && npm run seed && npm start
+#  در این حالت درایور PGlite فعال می‌شود: همان PostgreSQL، کامپایل‌شده به
+#  WebAssembly و اجراشده درون همان پردازه‌ی Node. هیچ تفاوت رفتاری بین
+#  دو مسیر وجود ندارد چون SQL و مهاجرت‌ها یکی است.
+# ═══════════════════════════════════════════════════════════════════════════
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: safestep-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: safestep
+      POSTGRES_PASSWORD: safestep
+      POSTGRES_DB: safestep
+      # ترتیب حروف فارسی و تاریخ‌ها به این وابسته است
+      LANG: en_US.utf8
+    ports:
+      # فقط روی لوکال‌هاست باز می‌شود، نه روی همه‌ی رابط‌های شبکه
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # سرویس‌های بعدی تا آماده شدن واقعی دیتابیس صبر می‌کنند،
+      # نه فقط تا بالا آمدن کانتینر
+      test: ['CMD-SHELL', 'pg_isready -U safestep -d safestep']
+      interval: 3s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+  # مهاجرت و داده‌ی نمونه در یک سرویس جداگانه اجرا می‌شود تا اگر شکست
+  # خورد، صریح دیده شود و سرور با دیتابیس ناقص بالا نیاید
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: safestep-migrate
+    environment:
+      NODE_ENV: development
+      DB_DRIVER: pg
+      DATABASE_URL: postgres://safestep:safestep@db:5432/safestep
+      SEED_DEFAULT_PASSWORD: ${SEED_DEFAULT_PASSWORD:-Test@1234}
+    command: sh -c "npm run migrate && npm run seed"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: safestep-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DB_DRIVER: pg
+      DATABASE_URL: postgres://safestep:safestep@db:5432/safestep
+      CORS_ORIGINS: http://localhost:4000,http://127.0.0.1:4000
+
+      # ⚠️ این مقادیر فقط برای اجرای محلی است.
+      # در محیط واقعی حتماً از فایل .env و رازهای تصادفی استفاده کنید:
+      #   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-only-access-secret-change-me-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-only-refresh-secret-change-me-in-production}
+      INVITE_CODE_PEPPER: ${INVITE_CODE_PEPPER:-dev-only-invite-pepper-change-me-in-production}
+
+      # اگر کلید FCM بگذارید، ارسال واقعی نوتیفیکیشن بدون تغییر کد فعال می‌شود
+      NOTIFICATION_DRIVER: auto
+      FCM_SERVER_KEY: ${FCM_SERVER_KEY:-}
+
+      # مسیر وب‌اپ داخل کانتینر (با volume زیر هم‌خوان است)
+      WEB_ROOT: /app/web
+
+      DEMO_MODE: 'true'
+    ports:
+      - '4000:4000'
+    volumes:
+      # وب‌اپ از روی دیسک سرو می‌شود تا تغییراتش بدون بیلد دوباره دیده شود
+      - ./web:/app/web:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  db-data:
