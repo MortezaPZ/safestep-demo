@@ -1,229 +1,166 @@
-# گزارش پیشرفت — سامانه‌ی هم‌قدم (SafeStep)
+# SafeStep demo progress
 
-> این سند برای مطالعه‌ی کارفرما نوشته شده است. هدفش این است که بدون خواندن
-> حتی یک خط کد، دقیقاً روشن شود **چه چیزی ساخته شده**، **چه چیزی شبیه‌سازی
-> شده**، و **تا محصول نهایی چه فاصله‌ای مانده**.
+Written so a reader can see what is built, what is simulated, and what is still missing, without reading the source.
 
-**تاریخ:** ۱ شهریور ۱۴۰۵ · **وضعیت:** دموی فنی قابل‌ارائه
+Date of the original note: 23 August 2026 (Jalali 1 Shahrivar 1405). Status at that date: a technical demo that can be presented.
 
----
+## 1. One paragraph
 
-## ۱. خلاصه‌ی یک‌بندی
+A runnable system exists: a Node.js backend, PostgreSQL, real authentication, a geofence engine with hysteresis, long-stop detection, live updates over WebSocket, and a right-to-left web dashboard. The three-minute path from sign-in to an emergency alert was executed and tested. The simulated part is the source of the GPS coordinates. The interface labels that mode, and each stored row has `is_simulated`.
 
-یک سامانه‌ی کامل و اجراشونده ساخته شده است: بک‌اند Node.js با PostgreSQL،
-احراز هویت واقعی، موتور Geofence با هیسترزیس، تشخیص توقف طولانی، پخش زنده با
-WebSocket، و یک داشبورد وب فارسی راست‌چین. کل مسیر سه‌دقیقه‌ای دمو —
-از ثبت‌نام تا هشدار اضطراری — **واقعاً اجرا شده و تست شده است**، نه
-شبیه‌سازی‌شده. تنها چیزی که ساختگی است، منبع مختصات GPS است که آن هم
-با برچسب صریح در رابط کاربری و پرچم `is_simulated` در دیتابیس مشخص می‌شود.
+## 2. What actually runs
 
----
+Checked on this machine.
 
-## ۲. چه چیزی واقعاً کار می‌کند
+### Backend
 
-هر مورد زیر روی این ماشین اجرا و تأیید شده است.
+| Piece | Status | Note |
+| --- | --- | --- |
+| Data model and migrations | Done | 11 tables, versioned, run on PostgreSQL |
+| JWT | Done | 15-minute access token, 30-day refresh with rotation |
+| Password hash | Done | bcrypt, configurable rounds |
+| Invite code | Done | 6 digits, single use, 15-minute expiry, HMAC-SHA256 |
+| Record-level access | Done | Three levels, enforced in SQL |
+| Geofence | Done | Haversine, 25 m hysteresis, debounce, cooldown |
+| Long stop | Done | Moving window, scatter radius, gap detection |
+| GPS loss | Done | Configurable threshold |
+| Low battery | Done | 6-hour cooldown |
+| WebSocket | Done | One room per user, authenticated on connect |
+| SOS | Done | Live position, or the last known point marked stale |
+| Rate limits | Done | Separate limits for auth, SOS, and invite codes |
+| Input validation | Done | zod on every endpoint |
+| REST API | Done | 35 endpoints |
 
-### ۲.۱ بک‌اند
+### Web dashboard
 
-| بخش | وضعیت | توضیح |
-|---|---|---|
-| مدل داده و مهاجرت‌ها | ✅ | ۱۱ جدول، نسخه‌بندی‌شده، اجراشده روی PostgreSQL واقعی |
-| احراز هویت JWT | ✅ | access ۱۵ دقیقه‌ای + refresh ۳۰ روزه با چرخش توکن |
-| هش پسورد | ✅ | bcrypt با تعداد دور قابل تنظیم |
-| کد دعوت | ✅ | ۶ رقمی، یک‌بارمصرف، انقضای ۱۵ دقیقه، هش‌شده با HMAC-SHA256 |
-| کنترل دسترسی سطح‌رکورد | ✅ | سه سطح مجزا، اعمال‌شده در لایه‌ی SQL |
-| موتور Geofence | ✅ | Haversine + هیسترزیس ۲۵ متری + debounce + دوره‌ی خاموشی |
-| تشخیص توقف طولانی | ✅ | پنجره‌ی متحرک با شعاع پراکندگی، تشخیص شکاف داده |
-| تشخیص قطع GPS | ✅ | آستانه‌ی قابل تنظیم |
-| هشدار باتری کم | ✅ | با دوره‌ی خاموشی ۶ ساعته |
-| WebSocket | ✅ | اتاق به‌ازای کاربر، احراز هویت هنگام اتصال |
-| SOS | ✅ | با موقعیت زنده یا آخرین نقطه‌ی شناخته‌شده و برچسب «قدیمی» |
-| محدودسازی نرخ | ✅ | مجزا برای auth، SOS و کد دعوت |
-| اعتبارسنجی ورودی | ✅ | zod روی تمام endpointها، پیام خطا به فارسی |
-| REST API | ✅ | ۳۵ endpoint |
+| Page | Status |
+| --- | --- |
+| Sign-in and registration, with seeded demo accounts | Done |
+| Primary-user dashboard: status, chips, SOS, map | Done |
+| Family dashboard | Done |
+| Alerts, filtered by type and read state | Done |
+| Safe zones: tap the map, slide the radius | Done |
+| Family members: invite code, access level, disconnect | Done |
+| Route history with a time gradient | Done |
+| Settings: privacy, alerts, thresholds, theme | Done |
+| Presentation mode | Done |
 
-### ۲.۲ داشبورد وب
+Each page has loading, empty, error, and success states.
 
-| صفحه | وضعیت |
-|---|---|
-| ورود و ثبت‌نام (با حساب‌های آماده‌ی دمو) | ✅ |
-| داشبورد کاربر اصلی (وضعیت، چیپ‌ها، SOS، نقشه) | ✅ |
-| داشبورد نظارتی عضو خانواده | ✅ |
-| هشدارها با فیلتر نوع و وضعیت خواندن | ✅ |
-| محدوده‌های امن (ساخت با لمس نقشه + اسلایدر شعاع) | ✅ |
-| اعضای خانواده (کد دعوت، سطح دسترسی، قطع) | ✅ |
-| تاریخچه‌ی مسیر با گرادیان زمانی | ✅ |
-| تنظیمات (حریم خصوصی، هشدارها، آستانه‌ها، تم) | ✅ |
-| پنل حالت نمایش | ✅ |
+### Quality recorded at that date
 
-همه‌ی صفحات چهار حالت **بارگذاری (اسکلتون) / خالی / خطا / موفق** را دارند.
+| Measure | Value |
+| --- | --- |
+| Unit tests | 57 (Haversine, geofence, long stop) |
+| Integration tests | 26 (registration through SOS) |
+| Total | 83, all passing at that date |
+| Browser console errors | None observed |
+| Unwanted horizontal scroll | None observed |
 
-### ۲.۳ کیفیت
+Later dependency updates can change the test run. The command is `npm test` in `backend`.
 
-| سنجه | مقدار |
-|---|---|
-| تست واحد | ۵۷ تست (Haversine، موتور Geofence، تشخیص توقف) |
-| تست یکپارچه | ۲۶ تست (کل مسیر ثبت‌نام تا SOS) |
-| **جمع** | **۸۳ تست، همگی سبز** |
-| خطای کنسول مرورگر | صفر |
-| اسکرول افقی ناخواسته | صفر |
+## 3. What is simulated
 
----
+### GPS
 
-## ۳. چه چیزی شبیه‌سازی شده — و دقیقاً تا کجا
+The coordinates are simulated. Everything after that is the real path. Simulated pings go through `POST /api/v1/locations/ping`, land in the same table, run through the same geofence engine, and raise the same alerts.
 
-این بخش عمداً صریح نوشته شده است.
+Marking:
 
-### ۳.۱ موقعیت GPS
+- `is_simulated` on every row of `location_pings`
+- A presentation-mode chip on the status card, on the map, and on related alerts
+- A page that states what is real and what is not
 
-**شبیه‌سازی‌شده:** منبع مختصات.
+### Push
 
-**واقعی:** هر چیز دیگری. پینگ‌های شبیه‌سازی‌شده از همان endpoint واقعی
-(`POST /api/v1/locations/ping`) عبور می‌کنند، در همان جدول ذخیره می‌شوند،
-همان موتور Geofence رویشان اجرا می‌شود و همان هشدارها را تولید می‌کنند.
+The FCM path is implemented: device tokens, payload, batch send, invalid-token cleanup, high priority for a critical alert. A real send is off because no FCM key was configured. The adapter falls back to an in-app WebSocket delivery plus a log line. In the demo that path is under a second. Set `FCM_SERVER_KEY` in `.env` to turn the real send on. No code change. `/health` shows the current mode.
 
-**چطور صادقانه علامت‌گذاری شده:**
-- ستون `is_simulated` روی تک‌تک ردیف‌های جدول `location_pings`
-- چیپ بنفش «🎬 حالت نمایش» در کارت وضعیت، روی نقشه، و روی هر هشدار مرتبط
-- یک صفحه‌ی اختصاصی که توضیح می‌دهد چه چیزی واقعی است و چه چیزی نیست
+### History seed
 
-### ۳.۲ نوتیفیکیشن Push
+The seed script builds two days of route history and eight sample alerts. The routes use the same geometry functions and a walking speed. They are not real events. Every row has `is_simulated = true`.
 
-**پیاده‌سازی‌شده:** کل ساختار FCM — ذخیره‌ی توکن دستگاه، ساخت بار داده،
-ارسال دسته‌ای، تشخیص و پاک‌سازی توکن‌های باطل، اولویت بالا برای هشدار بحرانی.
+## 4. Decisions
 
-**فعال نیست:** ارسال واقعی، چون کلید FCM در دسترس نبود.
+### Hysteresis
 
-**رفتار فعلی:** آداپتور خودکار روی مسیر جایگزین می‌افتد — تحویل
-درون‌برنامه‌ای از طریق WebSocket به‌علاوه‌ی ثبت در لاگ. این مسیر در دمو
-تأخیر زیر یک ثانیه دارد.
+Without a dead band, a person standing on the zone edge flips in and out on ordinary urban GPS noise (about 10 to 30 meters).
 
-**برای واقعی شدن:** فقط گذاشتن `FCM_SERVER_KEY` در فایل `.env`.
-**هیچ تغییر کدی لازم نیست.** وضعیت فعلی در `/health` قابل مشاهده است.
+On 20 noisy pings at the boundary:
 
-### ۳.۳ داده‌ی تاریخچه
+| Method | Alerts |
+| --- | --- |
+| Distance greater than radius | 19 |
+| This engine (hysteresis and debounce) | 0 |
 
-دو روز تاریخچه‌ی مسیر و ۸ هشدار نمونه با اسکریپت seed ساخته می‌شوند.
-مسیرها با همان توابع هندسی واقعی سیستم و در بازه‌ی سرعت پیاده‌روی انسان
-تولید شده‌اند، اما **رویداد واقعی نیستند** و همگی `is_simulated = TRUE` دارند.
+A real exit still produces exactly one alert. The test is `backend/tests/geofence.test.js`.
 
----
+Three independent checks:
 
-## ۴. تصمیم‌های فنی مهم و دلیلشان
+1. Dead band: exit at radius plus 25 m, return at radius minus 25 m
+2. Debounce: two consecutive pings in the same direction
+3. Cooldown: at least 60 seconds between two alerts of the same type
 
-### ۴.۱ چرا هیسترزیس، و چرا این عدد نمره می‌آورد
+### Two database paths
 
-بدون هیسترزیس، کاربری که روی مرز محدوده ایستاده با هر نوسان معمول GPS
-(۱۰ تا ۳۰ متر در محیط شهری) یک بار «خارج» و یک بار «داخل» تشخیص داده می‌شود.
+`docker compose up` starts PostgreSQL, as requested. The second driver is PGlite, PostgreSQL compiled to WebAssembly inside the Node process. The same SQL and the same migrations run on both. On a laptop without Docker, `npm start` still comes up.
 
-نتیجه‌ی سنجش واقعی روی ۲۰ پینگ نوسانی روی مرز:
+### No web build step
 
-| روش | تعداد هشدار |
-|---|---|
-| مقایسه‌ی ساده‌ی «فاصله > شعاع» | **۱۹ هشدار** |
-| موتور این پروژه (هیسترزیس + debounce) | **۰ هشدار** |
+The dashboard is ES modules and Leaflet. Leaflet, socket.io, and the Vazirmatn font are served locally (445 KB) so the demo does not depend on a CDN. Map tiles from OpenStreetMap still need a network.
 
-و در همان حال، یک خروج واقعی همچنان **دقیقاً یک** هشدار تولید می‌کند.
-این عدد ادعا نیست؛ یک تست اجراشونده است:
-`backend/tests/geofence.test.js`
+### Invite codes use HMAC
 
-سه لایه‌ی دفاعی مستقل پیاده شده است:
-1. **باند مرده:** آستانه‌ی خروج `R+۲۵` متر، آستانه‌ی بازگشت `R−۲۵` متر
-2. **debounce:** نیاز به ۲ پینگ متوالی هم‌جهت برای تأیید تغییر
-3. **دوره‌ی خاموشی:** حداقل ۶۰ ثانیه بین دو هشدار هم‌نوع
+A 6-digit code has 10^6 values. bcrypt would not stop an online guess. Rate limiting and the 15-minute expiry do that. bcrypt also cannot be looked up directly. HMAC with the server key can, and a database leak alone does not enable an offline search.
 
-### ۴.۲ چرا دیتابیس دو مسیر اجرا دارد
+## 5. Independence and safety
 
-`docker compose up` طبق خواسته PostgreSQL واقعی بالا می‌آورد. اما درایور
-دومی هم هست: **PGlite** — همان PostgreSQL کامپایل‌شده به WebAssembly که
-درون پردازه‌ی Node اجرا می‌شود.
+When the primary user turns sharing off:
 
-- دقیقاً همان SQL و همان مهاجرت‌ها روی هر دو مسیر اجرا می‌شود
-- روی ماشینی بدون Docker، کل سیستم با `npm start` بالا می‌آید
-- ریسک «دمو روی لپ‌تاپ جلسه بالا نیامد» حذف می‌شود
+| Behavior | Result |
+| --- | --- |
+| Store the ping | Continues. The person's own history stays theirs |
+| Broadcast location to the family | Stops |
+| Zone-exit alert | Stops. That alert would leak location |
+| SOS | Still works. The person started it |
 
-### ۴.۳ چرا وب‌اپ بدون مرحله‌ی بیلد است
+The family screen says sharing is paused. It does not show an error. The primary dashboard always shows how many people are receiving the location, who they are, and a control to stop.
 
-داشبورد با ES Modules خالص و Leaflet نوشته شده و هیچ بیلدی لازم ندارد.
-Leaflet، socket.io و فونت Vazirmatn به‌صورت محلی سرو می‌شوند (۴۴۵ کیلوبایت)
-تا دمو بدون CDN هم اجرا شود. تنها چیزی که به اینترنت نیاز دارد، کاشی‌های
-نقشه‌ی OpenStreetMap است.
+## 6. Not in this demo at the date of the note
 
-### ۴.۴ چرا کد دعوت با HMAC هش می‌شود نه bcrypt
+| Item | Status then | Estimate then |
+| --- | --- | --- |
+| Flutter app | Source written, not compiled. The Flutter SDK was not on the demo machine | About a day to build and fix |
+| Real FCM | Structure done, key missing | About two hours |
+| SMS verification | Sign-up has no SMS check | About a day, plus an SMS contract |
+| Background tracking | Needs platform permissions and native work | Two to three days |
+| Battery-aware ping interval | Not built | About two days |
+| PostGIS | Haversine in the service. Needed at larger scale | About a day |
+| Admin console | Not built | About two days |
+| English UI strings | Structure ready, translations not written | About a day |
+| Load test | Not run on the demo tree | About a day |
 
-فضای کد ۶ رقمی فقط ۱۰⁶ حالت دارد و bcrypt هم جلوی حمله‌ی آنلاین را
-نمی‌گیرد — آن کار را rate limiting و انقضای ۱۵ دقیقه‌ای می‌کند. ضمناً با
-bcrypt نمی‌توان مستقیم کوئری زد. HMAC با کلید سرور، هم جست‌وجوی مستقیم
-می‌دهد و هم نشتِ صرفِ دیتابیس اجازه‌ی حمله‌ی آفلاین نمی‌دهد.
+The main SafeStep repository later added a Flutter client, a PostgreSQL load note, and an English set of documents. This demo tree is the presentation build: backend and web.
 
----
+## 7. Roadmap suggested at that date
 
-## ۵. تنش استقلال و ایمنی — چطور در کد حل شد
+1. Finish the mobile build, connect FCM, add SMS verification.
+2. Background tracking, battery interval, load test, and centralized logs.
+3. An admin console, analytical reports, an English UI, and a usability test with real users.
 
-این تنش، هسته‌ی محصول است و صرفاً یک شعار در رابط کاربری نیست.
-
-وقتی کاربر اصلی اشتراک موقعیت را قطع می‌کند:
-
-| رفتار | نتیجه |
-|---|---|
-| ثبت پینگ در دیتابیس | ✅ ادامه دارد — تاریخچه‌ی خودِ کاربر، مال خودِ اوست |
-| پخش موقعیت به خانواده | ❌ کاملاً متوقف |
-| هشدار خروج از محدوده | ❌ متوقف — چون خودِ این هشدار هم یک نشت موقعیت است |
-| دکمه‌ی اضطراری (SOS) | ✅ **همچنان کار می‌کند** — کاربر خودش آن را آغاز کرده |
-
-و در سمت خانواده، به‌جای پیام خطا، یک پیام محترمانه نمایش داده می‌شود:
-«کاربر اشتراک‌گذاری موقعیت را موقتاً خاموش کرده است.»
-
-همچنین کاربر اصلی همیشه بالای داشبوردش می‌بیند: «شما در حال اشتراک موقعیت
-با ۲ نفر هستید» به‌همراه آواتار همان افراد و یک دکمه‌ی قطع فوری.
-
----
-
-## ۶. آنچه پیاده نشده است
-
-صادقانه، تا محصول نهایی این‌ها مانده است:
-
-| مورد | وضعیت | تخمین |
-|---|---|---|
-| **اپ Flutter** | کد نوشته شده اما **کامپایل نشده** — Flutter SDK روی ماشین توسعه نصب نبود | ۱ روز برای بیلد و رفع خطاهای احتمالی |
-| ارسال واقعی FCM | ساختار کامل، فقط کلید لازم است | ۲ ساعت |
-| تأیید شماره با پیامک | ثبت‌نام فعلاً بدون تأیید پیامک است | ۱ روز + قرارداد پنل پیامک |
-| ردیابی در پس‌زمینه (Android/iOS) | نیازمند مجوزهای ویژه و کار بومی | ۲ تا ۳ روز |
-| بهینه‌سازی مصرف باتری | الگوریتم فاصله‌ی تطبیقی پینگ | ۲ روز |
-| PostGIS | فعلاً Haversine در سطح سرویس؛ برای مقیاس بزرگ لازم می‌شود | ۱ روز |
-| صفحه‌ی مدیریت (ادمین) | پیاده نشده | ۲ روز |
-| زبان انگلیسی | ساختار آماده، ترجمه‌ها نوشته نشده | ۱ روز |
-| تست بار و فشار | انجام نشده | ۱ روز |
-
----
-
-## ۷. نقشه‌ی راه پیشنهادی
-
-**فاز ۱ — تکمیل موبایل (یک هفته)**
-بیلد و رفع اشکال اپ Flutter، اتصال FCM واقعی، تأیید شماره با پیامک.
-
-**فاز ۲ — آماده‌سازی تولید (یک هفته)**
-ردیابی پس‌زمینه، بهینه‌سازی باتری، تست بار، پایش و لاگ‌برداری متمرکز.
-
-**فاز ۳ — تکمیل محصول (دو هفته)**
-پنل مدیریت، گزارش‌های تحلیلی، زبان انگلیسی، آزمون کاربردپذیری با
-کاربران واقعی — که برای این محصول از هر تست فنی مهم‌تر است.
-
----
-
-## ۸. چطور خودتان بررسی کنید
+## 8. Run it yourself
 
 ```bash
-cd backend && npm install && npm run seed && npm start
+cd backend
+npm install
+npm run seed
+npm start
 ```
 
-سپس `http://localhost:4000` را باز کنید و با حساب‌های آماده وارد شوید
-(روی صفحه‌ی ورود با یک کلیک پر می‌شوند).
-
-برای اجرای تست‌ها:
+Open `http://localhost:4000`. The login page can fill the seeded accounts. The password is `Test@1234`.
 
 ```bash
-cd backend && npm test
+cd backend
+npm test
 ```
 
-سناریوی گام‌به‌گام دمو در `docs/demo-script.md` آمده است.
+The timed walk-through is `docs/demo-script.md`.

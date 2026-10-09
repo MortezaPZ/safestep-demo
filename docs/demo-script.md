@@ -1,177 +1,92 @@
-# اسکریپت دموی سه دقیقه‌ای — هم‌قدم
+# Three-minute demo
 
-> این سناریو تمرین‌شده و اجراشده است. اگر مرحله‌به‌مرحله جلو بروید،
-> هیچ خطایی نمی‌بینید.
+This path has been run. Follow it in order.
 
----
-
-## آماده‌سازی (۵ دقیقه قبل از جلسه)
+## Five minutes before
 
 ```bash
-cd backend && npm install && npm run seed && npm start
+cd backend
+npm install
+npm run seed
+npm start
 ```
 
-سپس **دو پنجره‌ی مرورگر** کنار هم باز کنید:
+Open two browser windows side by side. The app is `http://localhost:4000`.
 
-| پنجره | آدرس | نقش |
-|---|---|---|
-| چپ | `http://localhost:4000` | مریم رضایی — کاربر اصلی |
-| راست | `http://localhost:4000` (پنجره‌ی ناشناس) | علی رضایی — عضو خانواده |
+| Window | Account |
+| --- | --- |
+| Left | Primary user, phone `09121110001` |
+| Right, private / incognito | Family member with emergency access, phone `09121110002` |
 
-> پنجره‌ی دوم حتماً **ناشناس/incognito** باشد، وگرنه هر دو یک نشست
-> مشترک می‌گیرند و همزمانی زنده دیده نمی‌شود.
+The second window must be private. Otherwise both windows share one session and the live update is invisible.
 
-روی صفحه‌ی ورود، حساب‌ها با یک کلیک پر می‌شوند. رمز همه: `Test@1234`
+The login page can fill these accounts. Password: `Test@1234`. A third seeded phone, `09121110003`, is family without emergency access. Display names in the seed are Persian.
 
-**چک نهایی:** چیپ سبز «● زنده» بالای هر دو پنجره دیده شود.
+Both windows should show a green live chip before you start.
 
----
+## 0:00 to 0:25. Opening
 
-## دقیقه‌ی ۰:۰۰ — ۰:۲۵ · جمله‌ی افتتاحیه
+Two people want different things. The person being cared for wants to go out. The family wants to know when something is wrong. A product that only thinks about safety gets switched off. The design is that tension.
 
-> «دو نفر اینجا هستند که خواسته‌هایشان با هم در تنش است. مریم می‌خواهد
-> مستقل بیرون برود. خانواده‌اش می‌خواهند نگران نباشند. اگر فقط به ایمنی
-> فکر کنیم، محصولی می‌سازیم که مریم خاموشش می‌کند. کل طراحی این سامانه
-> حول همین تنش است.»
+On the left dashboard, the first line is not a report about the person. It is their own control: who is receiving the location, and a button to stop sharing.
 
-**پنجره‌ی چپ را نشان دهید.** بالای داشبورد:
+## 0:25 to 0:50. Status and an invite
 
-> «اولین چیزی که مریم می‌بیند گزارشی نیست که دیگران از او می‌گیرند —
-> کنترل خودش است: *شما در حال اشتراک موقعیت با ۲ نفر هستید*، با
-> عکس همان دو نفر و یک دکمه‌ی قطع فوری.»
+Point at the status card. Green means inside the home zone. Amber means outside. Grey means unknown. Color is never the only signal. The status text is always next to it.
 
----
+Open Family, create an invite, and pick an access level. The three levels are enforced in the database, not only as labels. The code is six digits, single use, valid for fifteen minutes, and the server stores only a hash.
 
-## ۰:۲۵ — ۰:۵۰ · وضعیت و کد دعوت
+## 0:50 to 1:20. The family view
 
-روی **کارت وضعیت** انگشت بگذارید: سبز، «داخل محدوده‌ی امن — خانه».
+The right window is already connected. The family member sees the live point. The solid circle is the safe zone. The dashed circle is the exit threshold.
 
-> «سه حالت رنگی داریم: سبز داخل، کهربایی خارج، خاکستری نامشخص. و توجه
-> کنید رنگ هرگز تنها حامل معنا نیست — متن وضعیت همیشه کنارش هست.»
+## 1:20 to 2:00. Live update
 
-به تب **اعضای خانواده** بروید → **ساخت کد دعوت** → سطح دسترسی را انتخاب کنید.
+On the left, open presentation mode, choose the route that leaves the zone, and start it.
 
-> «سه سطح دسترسی داریم و این‌ها فقط برچسب رابط کاربری نیستند؛ در لایه‌ی
-> دیتابیس اعمال می‌شوند. کد شش‌رقمی یک‌بارمصرف است، پانزده دقیقه اعتبار
-> دارد، و در سرور فقط اثر رمزنگاری‌شده‌اش ذخیره می‌شود.»
+Say this before the point moves: the coordinates are fake, and the screen says so. The pings still go through the real API, into the real table, through the real engine. Each row is flagged simulated.
 
----
+Both windows should move the blue point together. Wait for the alert, about ten seconds at eight times speed. It should land on the family dashboard in under two seconds, with type, time, distance, and zone radius.
 
-## ۰:۵۰ — ۱:۲۰ · اتصال عضو خانواده
+Then the technical point. The dashed circle exists because "distance greater than radius" on twenty noisy boundary pings produced nineteen alerts. This engine produced zero, and a real exit still produces one. The test is `backend/tests/geofence.test.js`.
 
-**به پنجره‌ی راست بروید.** علی از قبل متصل است، پس مستقیم داشبورد
-نظارتی را نشان دهید.
+## 2:00 to 2:30. SOS
 
-> «علی همین حالا موقعیت زنده‌ی مریم را روی نقشه می‌بیند. دایره‌ی پررنگ
-> محدوده‌ی امن است و دایره‌ی خط‌چین، آستانه‌ی خروج — که یک لحظه‌ی دیگر
-> می‌گویم چرا وجود دارد.»
+On the left dashboard, press the red SOS button. Red is used only here. If every alert were red, a real request for help would not stand out.
 
----
+A dialog opens with a three-second countdown. It names who will be notified. Nothing is sent until the countdown finishes. Cancelling does not leave a red alert on the family screen.
 
-## ۱:۲۰ — ۲:۰۰ · لحظه‌ی اصلی: همزمانی زنده
+On the right, a red emergency bar appears with a call action. It reaches only the family member who has emergency access. The third seeded account can see location and ordinary alerts and does not receive SOS. That split is in the query.
 
-**پنجره‌ی چپ** → تب **حالت نمایش** → مسیر **«خروج از محدوده»** → **شروع شبیه‌سازی**
+## 2:30 to 2:50. History and stopping the share
 
-> «قبل از هر چیز: این حالت نمایش است و ما صریح می‌گوییمش. مختصات
-> ساختگی است — اما هر چیز دیگری واقعی است. این پینگ‌ها از همان API
-> واقعی عبور می‌کنند، در همان جدول ذخیره می‌شوند، و همان موتور روی
-> آن‌ها اجرا می‌شود. هر پینگ در دیتابیس پرچم «شبیه‌سازی‌شده» می‌خورد.»
+Open route history. Older segments are lighter. Newer segments are stronger. The day's stats are on the page. Delete history removes the rows. It does not set a hidden flag.
 
-**هر دو پنجره را نشان دهید.** نقطه‌ی آبی در هر دو همزمان حرکت می‌کند.
+Back on the dashboard, turn sharing off and confirm. The right window should say the location is hidden, immediately, without an error.
 
-**صبر کنید تا هشدار برسد** (حدود ۱۰ ثانیه با سرعت ۸ برابر):
+## 2:50 to 3:00. Close
 
-> «کمتر از دو ثانیه: هشدار در داشبورد علی، نوتیفیکیشن، و رکورد ثبت‌شده
-> با نوع، زمان، فاصله و شعاع محدوده.»
+There is no dead button and no blank page in this path. The suite at the time of the demo was 83 tests. The layout is right-to-left, dates are Jalali, a dark theme exists, and the touch targets are large.
 
-### 🎯 اینجا نکته‌ی فنی را بگویید
+The gap from this demo to a finished product is depth of data and the mobile app, not a missing backend. The written status is `docs/progress.md`.
 
-> «آن دایره‌ی خط‌چین یادتان هست؟ اگر ساده می‌گفتیم *فاصله بیشتر از شعاع
-> یعنی خارج*، کسی که روی مرز بایستد با هر نوسان معمول GPS یک بار خارج و
-> یک بار داخل می‌شد. ما این را سنجیدیم: روی بیست پینگ نوسانی، روش ساده
-> **نوزده هشدار** تولید می‌کرد. موتور ما **صفر** هشدار می‌دهد — و در
-> همان حال یک خروج واقعی همچنان دقیقاً یک هشدار می‌دهد. این یک ادعا
-> نیست، یک تست اجراشونده است.»
+## If something fails
 
----
+| Problem | What to do |
+| --- | --- |
+| The live chip is not green | Reload. The WebSocket reconnects |
+| The point does not move | Presentation mode: confirm the simulator is running |
+| No alert | The route must be the one that leaves the zone, not the neighborhood loop |
+| The map is grey | Map tiles need a network. The rest of the demo still runs |
+| Both windows are the same user | The second window must be private |
+| The database is in a bad state | Run `npm run seed` again |
 
-## ۲:۰۰ — ۲:۳۰ · SOS
+## Questions that come up
 
-**پنجره‌ی چپ** → تب داشبورد → **دکمه‌ی قرمز SOS**.
+Does it work, or is it a picture? The backend is real. Run `npm test` in `backend`.
 
-> «توجه کنید در کل این رابط، قرمز را فقط همین‌جا خرج کرده‌ایم. اگر قرمز
-> را برای هر هشداری استفاده کنیم، وقتی واقعاً کسی درخواست کمک کند دیگر
-> چیزی برای جلب توجه نمانده است.»
+Why is there no phone notification? The FCM path is implemented. It stays on the in-app fallback until `FCM_SERVER_KEY` is set. `/health` shows which mode is active.
 
-دیالوگ با **شمارش معکوس ۳ ثانیه‌ای** باز می‌شود.
+Where is the mobile app? This demo repository is the backend and the web dashboard. The Flutter client lives in the main SafeStep repository. Say that directly.
 
-> «دیالوگ قبل از ارسال می‌گوید دقیقاً چه کسی مطلع می‌شود. و سه ثانیه
-> فرصت لغو هست. نکته‌ی مهم: تا پایان شمارش هیچ درخواستی به سرور نمی‌رود —
-> اگر می‌رفت و بعد لغو می‌شد، خانواده یک هشدار قرمز دیده و بی‌جهت
-> وحشت کرده بود.»
-
-بگذارید شمارش تمام شود. **به پنجره‌ی راست بروید:**
-
-> «نوار قرمز اضطراری با دکمه‌ی تماس. و اینجا یک نکته‌ی امنیتی: این هشدار
-> فقط به علی رسید، چون فقط او دسترسی اضطراری دارد. زهرا — دختر مریم —
-> موقعیت و هشدارهای عادی را می‌بیند اما SOS به او نمی‌رسد. این تفکیک
-> در کوئری دیتابیس اعمال می‌شود، نه در رابط کاربری.»
-
----
-
-## ۲:۳۰ — ۲:۵۰ · تاریخچه و استقلال
-
-تب **تاریخچه‌ی مسیر**:
-
-> «مسیر امروز با گرادیان زمانی — کم‌رنگ یعنی قدیمی‌تر، پررنگ یعنی
-> تازه‌تر. با آمار روز. و دکمه‌ی حذف تاریخچه که واقعاً داده را از
-> دیتابیس پاک می‌کند، نه اینکه پرچم مخفی بزند.»
-
-**حالا لحظه‌ی پایانی.** به داشبورد برگردید → **قطع اشتراک** → تأیید.
-
-**بلافاصله پنجره‌ی راست را نشان دهید:**
-
-> «سمت خانواده فوراً شد *موقعیت مخفی شد*. نه پیام خطا — یک پیام
-> محترمانه. چون این حق مریم است.»
-
----
-
-## ۲:۵۰ — ۳:۰۰ · جمع‌بندی
-
-> «اینجا هیچ دکمه‌ی بی‌عملی، هیچ داده‌ی هاردکدشده و هیچ صفحه‌ی سفیدی
-> نیست. هشتاد و سه تست خودکار دارد. راست‌چین کامل، تاریخ شمسی، حالت
-> تیره، و هدف‌های لمسی بزرگ — چون کاربر این محصول ممکن است لرزش دست
-> داشته باشد.
->
-> فاصله‌ی این دمو تا محصول نهایی، عمق داده و اپ موبایل است — نه کیفیت
-> مهندسی. گزارش کامل در `docs/progress.md` هست.»
-
----
-
-## اگر چیزی خراب شد
-
-| مشکل | راه‌حل سریع |
-|---|---|
-| چیپ «زنده» سبز نیست | صفحه را تازه کنید؛ WebSocket خودکار وصل می‌شود |
-| نقطه حرکت نمی‌کند | تب حالت نمایش → بررسی کنید شبیه‌ساز در حال اجراست |
-| هشدار نمی‌آید | مطمئن شوید مسیر «خروج از محدوده» انتخاب شده، نه «گشت محله» |
-| نقشه خاکستری است | اینترنت قطع است — کاشی‌های OSM لازم دارد. بقیه‌ی دمو کار می‌کند |
-| هر دو پنجره یک کاربر | پنجره‌ی دوم باید ناشناس باشد |
-| دیتابیس به هم ریخت | `npm run seed` دوباره اجرا کنید |
-
-## پرسش‌های محتمل کارفرما
-
-**«این واقعاً کار می‌کند یا فقط ظاهر است؟»**
-بک‌اند واقعی با PostgreSQL است. `npm test` را جلویشان اجرا کنید — ۸۳ تست.
-
-**«چرا نوتیفیکیشن روی گوشی نمی‌آید؟»**
-ساختار FCM کامل پیاده شده؛ فقط کلید لازم است. با گذاشتن کلید در `.env`
-بدون تغییر کد فعال می‌شود. وضعیت فعلی در `/health` دیده می‌شود.
-
-**«اپ موبایل کجاست؟»**
-کدش نوشته شده اما روی ماشین توسعه Flutter SDK نبود، پس کامپایل‌نشده
-تحویل شده است. این را صریح بگویید — همین صداقت اعتماد می‌سازد.
-
-**«GPS واقعی چطور؟»**
-همان endpoint است. اپ موبایل به‌جای شبیه‌ساز، مختصات واقعی می‌فرستد و
-`is_simulated` را `false` می‌گذارد. یک خط تفاوت.
+How does real GPS work? The phone posts to the same endpoint and sets `is_simulated` to false.
