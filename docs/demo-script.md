@@ -1,6 +1,6 @@
 # Three-minute demo
 
-This path has been run. Follow it in order.
+Use this sequence for a local demonstration.
 
 ## Five minutes before
 
@@ -13,14 +13,13 @@ npm start
 
 Open two browser windows side by side. The app is `http://localhost:4000`.
 
-| Window | Account |
+| Window | Sample role |
 | --- | --- |
-| Left | Primary user, phone `09000000001` |
-| Right, private / incognito | Family member with emergency access, phone `09000000002` |
-
+| Left | Primary user |
+| Right, private / incognito | Family member with emergency access |
 The second window must be private. Otherwise both windows share one session and the live update is invisible.
 
-The login page can fill these accounts. Password: `Test@1234`. A third seeded phone, `09000000003`, is family without emergency access. Display names in the seed are Persian.
+The login page can fill these sample accounts. A third seeded role is a family member without emergency access. All seeded accounts are for local demonstrations only.
 
 Both windows should show a green live chip before you start.
 

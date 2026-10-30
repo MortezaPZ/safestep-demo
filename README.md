@@ -83,15 +83,14 @@ docker compose up
 
 Compose starts PostgreSQL, runs migrations, and loads the sample data.
 
-Seeded logins. The password for all three is `Test@1234`.
+Seeded local demo accounts only. These credentials are not used by any hosted service; never reuse the sample password or deploy these accounts.
 
-| Phone | Role |
+| Sample account | Role |
 | --- | --- |
-| `09000000001` | Primary user |
-| `09000000002` | Family member, including emergency access |
-| `09000000003` | Family member, without emergency access |
-
-The seeded display names are Persian. Open a second window in a private session, or both tabs share one login.
+| Primary user | Primary user |
+| Family member | Family member with emergency access |
+| Family member | Family member without emergency access |
+Open a second browser window in a private session so the two sample roles use separate sessions.
 
 The three-minute walkthrough is `docs/demo-script.md`.
 
@@ -186,7 +185,3 @@ Values in `.env.example` are for local use. Generate a real secret with:
 ```bash
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
-
-## License
-
-Technical demo. See the repository license file if one is present.

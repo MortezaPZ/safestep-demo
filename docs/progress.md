@@ -156,7 +156,7 @@ npm run seed
 npm start
 ```
 
-Open `http://localhost:4000`. The login page can fill the seeded accounts. The password is `Test@1234`.
+Open the local demo at http://localhost:4000. The login page can fill accounts created by the seed script. Do not deploy seeded credentials.
 
 ```bash
 cd backend
