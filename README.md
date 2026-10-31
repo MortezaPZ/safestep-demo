@@ -83,7 +83,7 @@ docker compose up
 
 Compose starts PostgreSQL, runs migrations, and loads the sample data.
 
-Seeded local demo accounts only. These credentials are not used by any hosted service; never reuse the sample password or deploy these accounts.
+Seeded local demo accounts only. Names, phone values, and approximate coordinates are synthetic fixtures; they do not identify people or residences. These credentials are not used by any hosted service; never reuse the sample password or deploy these accounts.
 
 | Sample account | Role |
 | --- | --- |

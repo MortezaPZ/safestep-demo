@@ -51,19 +51,19 @@ afterAll(async () => {
 });
 
 describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', () => {
-  let maryam; // کاربر اصلی
-  let ali; // عضو خانواده با دسترسی اضطراری
-  let zahra; // عضو خانواده بدون دسترسی اضطراری
+  let primaryUser; // کاربر اصلی
+  let guardianFullAccess; // عضو خانواده با دسترسی اضطراری
+  let guardianLimited; // عضو خانواده بدون دسترسی اضطراری
   let zoneId;
 
   it('کاربر اصلی و دو عضو خانواده ثبت‌نام می‌کنند', async () => {
-    maryam = await signUp('09000000001', 'کاربر اصلی آزمایشی', 'primary');
-    ali = await signUp('09000000002', 'عضو خانواده آزمایشی ۱', 'guardian');
-    zahra = await signUp('09000000003', 'عضو خانواده آزمایشی ۲', 'guardian');
+    primaryUser = await signUp('09000000001', 'کاربر اصلی آزمایشی', 'primary');
+    guardianFullAccess = await signUp('09000000002', 'عضو خانواده آزمایشی ۱', 'guardian');
+    guardianLimited = await signUp('09000000003', 'عضو خانواده آزمایشی ۲', 'guardian');
 
-    expect(maryam.user.role).toBe('primary');
+    expect(primaryUser.user.role).toBe('primary');
     // شماره باید نرمال‌سازی شده باشد
-    expect(maryam.user.phone).toBe('09000000001');
+    expect(primaryUser.user.phone).toBe('09000000001');
   });
 
   it('ورود با رمز اشتباه رد می‌شود', async () => {
@@ -78,7 +78,7 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   it('کاربر اصلی یک محدوده‌ی امن می‌سازد', async () => {
     const res = await request(app)
       .post('/api/v1/safe-zones')
-      .set(auth(maryam.token))
+      .set(auth(primaryUser.token))
       .send({ name: 'خانه', centerLat: HOME.lat, centerLng: HOME.lng, radiusM: 150 });
 
     expect(res.status).toBe(201);
@@ -90,8 +90,8 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   it('پیش از برقراری رابطه، عضو خانواده به موقعیت دسترسی ندارد', async () => {
     const res = await request(app)
       .get('/api/v1/locations/current')
-      .query({ userId: maryam.id })
-      .set(auth(ali.token));
+      .query({ userId: primaryUser.id })
+      .set(auth(guardianFullAccess.token));
 
     expect(res.status).toBe(403);
   });
@@ -99,7 +99,7 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   it('کد دعوت ساخته و توسط علی با دسترسی اضطراری مصرف می‌شود', async () => {
     const invite = await request(app)
       .post('/api/v1/guardianships/invites')
-      .set(auth(maryam.token))
+      .set(auth(primaryUser.token))
       .send({ permissions: ['view_location', 'receive_alerts', 'emergency'] });
 
     expect(invite.status).toBe(201);
@@ -107,7 +107,7 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
 
     const redeem = await request(app)
       .post('/api/v1/guardianships/redeem')
-      .set(auth(ali.token))
+      .set(auth(guardianFullAccess.token))
       .send({ code: invite.body.code });
 
     expect(redeem.status).toBe(201);
@@ -117,31 +117,31 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   it('همان کد دعوت بار دوم پذیرفته نمی‌شود', async () => {
     const invite = await request(app)
       .post('/api/v1/guardianships/invites')
-      .set(auth(maryam.token))
+      .set(auth(primaryUser.token))
       .send({ permissions: ['view_location'] });
 
     const first = await request(app)
       .post('/api/v1/guardianships/redeem')
-      .set(auth(zahra.token))
+      .set(auth(guardianLimited.token))
       .send({ code: invite.body.code });
     expect(first.status).toBe(201);
 
     // تلاش دوباره با همان کد — این بار باید رد شود
     const second = await request(app)
       .post('/api/v1/guardianships/redeem')
-      .set(auth(zahra.token))
+      .set(auth(guardianLimited.token))
       .send({ code: invite.body.code });
 
     expect(second.status).toBeGreaterThanOrEqual(400);
   });
 
   it('زهرا سطح دسترسی «دریافت هشدار» می‌گیرد اما نه اضطراری', async () => {
-    const list = await request(app).get('/api/v1/guardianships').set(auth(maryam.token));
-    const link = list.body.guardians.find((g) => g.guardianUserId === zahra.id);
+    const list = await request(app).get('/api/v1/guardianships').set(auth(primaryUser.token));
+    const link = list.body.guardians.find((g) => g.guardianUserId === guardianLimited.id);
 
     const res = await request(app)
       .patch(`/api/v1/guardianships/${link.id}`)
-      .set(auth(maryam.token))
+      .set(auth(primaryUser.token))
       .send({ permissions: ['view_location', 'receive_alerts'] });
 
     expect(res.status).toBe(200);
@@ -151,7 +151,7 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   it('پینگ داخل محدوده، هیچ هشداری تولید نمی‌کند', async () => {
     const res = await request(app)
       .post('/api/v1/locations/ping')
-      .set(auth(maryam.token))
+      .set(auth(primaryUser.token))
       .send({ lat: HOME.lat, lng: HOME.lng, batteryLevel: 90 });
 
     expect(res.status).toBe(201);
@@ -162,8 +162,8 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   it('عضو خانواده حالا موقعیت زنده را می‌بیند', async () => {
     const res = await request(app)
       .get('/api/v1/locations/current')
-      .query({ userId: maryam.id })
-      .set(auth(ali.token));
+      .query({ userId: primaryUser.id })
+      .set(auth(guardianFullAccess.token));
 
     expect(res.status).toBe(200);
     expect(res.body.hidden).toBe(false);
@@ -174,7 +174,7 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
     const far = destinationPoint(HOME.lat, HOME.lng, 400, 90);
     const res = await request(app)
       .post('/api/v1/locations/ping')
-      .set(auth(maryam.token))
+      .set(auth(primaryUser.token))
       .send({ lat: far.lat, lng: far.lng, batteryLevel: 89 });
 
     expect(res.body.alerts).toHaveLength(0);
@@ -184,7 +184,7 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
     const far = destinationPoint(HOME.lat, HOME.lng, 420, 90);
     const res = await request(app)
       .post('/api/v1/locations/ping')
-      .set(auth(maryam.token))
+      .set(auth(primaryUser.token))
       .send({ lat: far.lat, lng: far.lng, batteryLevel: 88 });
 
     expect(res.body.alerts).toHaveLength(1);
@@ -194,7 +194,7 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   });
 
   it('هر دو عضو خانواده هشدار خروج را در فهرست خود می‌بینند', async () => {
-    for (const guardian of [ali, zahra]) {
+    for (const guardian of [guardianFullAccess, guardianLimited]) {
       const res = await request(app)
         .get('/api/v1/alerts')
         .query({ types: 'zone_exit' })
@@ -211,7 +211,7 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   let sosAlertId;
 
   it('مخاطبان اضطراری پیش از فشردن دکمه قابل مشاهده‌اند', async () => {
-    const res = await request(app).get('/api/v1/sos/contacts').set(auth(maryam.token));
+    const res = await request(app).get('/api/v1/sos/contacts').set(auth(primaryUser.token));
 
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(1); // فقط علی
@@ -223,7 +223,7 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
 
     const res = await request(app)
       .post('/api/v1/sos')
-      .set(auth(maryam.token))
+      .set(auth(primaryUser.token))
       .send({ lat: here.lat, lng: here.lng, batteryLevel: 87, note: 'حالم خوب نیست' });
 
     expect(res.status).toBe(201);
@@ -242,7 +242,7 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
     const res = await request(app)
       .get('/api/v1/alerts')
       .query({ types: 'sos' })
-      .set(auth(ali.token));
+      .set(auth(guardianFullAccess.token));
 
     expect(res.body.alerts.some((a) => a.id === sosAlertId)).toBe(true);
   });
@@ -250,12 +250,12 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   it('هشدار SOS خوانده و سپس بسته می‌شود', async () => {
     const read = await request(app)
       .post(`/api/v1/alerts/${sosAlertId}/read`)
-      .set(auth(ali.token));
+      .set(auth(guardianFullAccess.token));
     expect(read.status).toBe(200);
 
     const resolve = await request(app)
       .post(`/api/v1/alerts/${sosAlertId}/resolve`)
-      .set(auth(ali.token));
+      .set(auth(guardianFullAccess.token));
 
     expect(resolve.status).toBe(200);
     expect(resolve.body.resolvedAt).not.toBeNull();
@@ -264,7 +264,7 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   it('SOS با نرخ بالا محدود می‌شود', async () => {
     const results = [];
     for (let i = 0; i < 6; i += 1) {
-      const res = await request(app).post('/api/v1/sos').set(auth(maryam.token)).send({});
+      const res = await request(app).post('/api/v1/sos').set(auth(primaryUser.token)).send({});
       results.push(res.status);
     }
     // سقف پیش‌فرض ۳ در دقیقه است، پس باید حداقل یک ۴۲۹ ببینیم
@@ -276,14 +276,14 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   it('با خاموش کردن اشتراک، موقعیت برای خانواده مخفی می‌شود', async () => {
     const off = await request(app)
       .put('/api/v1/locations/sharing')
-      .set(auth(maryam.token))
+      .set(auth(primaryUser.token))
       .send({ enabled: false });
     expect(off.status).toBe(200);
 
     const res = await request(app)
       .get('/api/v1/locations/current')
-      .query({ userId: maryam.id })
-      .set(auth(ali.token));
+      .query({ userId: primaryUser.id })
+      .set(auth(guardianFullAccess.token));
 
     expect(res.status).toBe(200);
     expect(res.body.hidden).toBe(true);
@@ -292,7 +292,7 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   });
 
   it('کاربر اصلی همچنان موقعیت خودش را می‌بیند', async () => {
-    const res = await request(app).get('/api/v1/locations/status').set(auth(maryam.token));
+    const res = await request(app).get('/api/v1/locations/status').set(auth(primaryUser.token));
 
     expect(res.status).toBe(200);
     expect(res.body.location).not.toBeNull();
@@ -303,13 +303,13 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   it('با روشن کردن دوباره، موقعیت برمی‌گردد', async () => {
     await request(app)
       .put('/api/v1/locations/sharing')
-      .set(auth(maryam.token))
+      .set(auth(primaryUser.token))
       .send({ enabled: true });
 
     const res = await request(app)
       .get('/api/v1/locations/current')
-      .query({ userId: maryam.id })
-      .set(auth(ali.token));
+      .query({ userId: primaryUser.id })
+      .set(auth(guardianFullAccess.token));
 
     expect(res.body.hidden).toBe(false);
   });
@@ -317,33 +317,33 @@ describe('مسیر کامل: ثبت‌نام تا هشدار اضطراری', ()
   /* ─────────────────── قطع دسترسی ─────────────────── */
 
   it('پس از قطع دسترسی، عضو خانواده دیگر چیزی نمی‌بیند', async () => {
-    const list = await request(app).get('/api/v1/guardianships').set(auth(maryam.token));
-    const link = list.body.guardians.find((g) => g.guardianUserId === zahra.id);
+    const list = await request(app).get('/api/v1/guardianships').set(auth(primaryUser.token));
+    const link = list.body.guardians.find((g) => g.guardianUserId === guardianLimited.id);
 
     const revoke = await request(app)
       .delete(`/api/v1/guardianships/${link.id}`)
-      .set(auth(maryam.token));
+      .set(auth(primaryUser.token));
     expect(revoke.status).toBe(200);
 
     const res = await request(app)
       .get('/api/v1/locations/current')
-      .query({ userId: maryam.id })
-      .set(auth(zahra.token));
+      .query({ userId: primaryUser.id })
+      .set(auth(guardianLimited.token));
 
     expect(res.status).toBe(403);
   });
 
   it('تاریخچه‌ی حذف‌شده واقعاً از دیتابیس پاک می‌شود', async () => {
     const before = await db.query('SELECT COUNT(*)::int AS c FROM location_pings WHERE user_id = $1', [
-      maryam.id,
+      primaryUser.id,
     ]);
     expect(before.rows[0].c).toBeGreaterThan(0);
 
-    const res = await request(app).delete('/api/v1/locations/history').set(auth(maryam.token));
+    const res = await request(app).delete('/api/v1/locations/history').set(auth(primaryUser.token));
     expect(res.status).toBe(200);
 
     const after = await db.query('SELECT COUNT(*)::int AS c FROM location_pings WHERE user_id = $1', [
-      maryam.id,
+      primaryUser.id,
     ]);
     expect(after.rows[0].c).toBe(0);
   });
