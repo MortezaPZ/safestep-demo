@@ -185,3 +185,9 @@ Values in `.env.example` are for local use. Generate a real secret with:
 ```bash
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
+
+## Folder guides
+
+- [`backend/`](<backend/README.md>)
+- [`docs/`](<docs/README.md>)
+- [`web/`](<web/README.md>)
